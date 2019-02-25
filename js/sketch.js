@@ -1,4 +1,6 @@
-squareSize = 200
+
+
+squareSize = 75
 squarePadding = squareSize * .08
 grassPadding = 30
 lotPadding = 20
@@ -18,84 +20,63 @@ updateTimer = 0;
 rate = 3;
 
 levelComplete = false;
+displayCompletionLabel = false;
+levelCompleteTimer = 0;
 
 var canvas;
 
-cars= ["redCar","greenCar","orangeCar"]
+cars= []
 
-pieces = { 
-    "redCar"    : new piece("redCar",2,false,0,2,[255,59,59]),
-    "greenCar"  : new piece("greenCar",2,true,2,1,[0,255,128]),
-    "orangeCar" : new piece("orangeCar",2,false,1,0,[255,165,0])
+pieces = {
 }
-
-function piece(name, length, isVertical, intXpos, intYpos,[r,g,b]){
-    this.name = name
-    this.intXpos = intXpos
-    this.intYpos = intYpos
-    this.pLotX = grassPadding + lotPadding +  intXpos * squareSize + squarePadding;
-    this.pLotY = grassPadding + lotPadding +  intYpos * squareSize+ squarePadding;
-    this.red = r
-    this.green = g
-    this.blue = b
-    this.isVertical = isVertical
-    this.length = length
-    this.height = isVertical? length * squareSize - 2 * squarePadding: 1 * squareSize - 2 * squarePadding;
-    this.width = isVertical? 1 * squareSize - 2 * squarePadding: length * squareSize - 2 * squarePadding;
-    this.needsUpdating = false;
-}
-
 
 function setup(){
-
-
     var canvas = createCanvas(canvasDimensions + 3 * squareSize ,canvasDimensions);
-
+    canvas.parent('canvas-container');
     canvas.class('parking-lot');
-
     drawBackground();
-    // Make Exit
-
-
-
     drawCars();
-    // noLoop();
 }
-
 
 function drawBackground(){
-
+    // creates Canvas
     canvas = createCanvas(canvasDimensions + 3 * squareSize ,canvasDimensions);
-
+    canvas.parent('canvas-container');
+    canvas.class('parking-lot');
+    
+    // Draws parkingLot
     fill(255,255,255);
-
-    rect(grassPadding,grassPadding,parkingLotDimensions,parkingLotDimensions,
-        15,15,15,15
-        )
-
-   fill(212,212,212);
-
+    rect(grassPadding,grassPadding,parkingLotDimensions,parkingLotDimensions,15,15,15,15)
+    // Draws Exit
+    rect(parkingLotDimensions + grassPadding ,grassPadding + 2*squareSize + lotPadding, squareSize/6, squareSize);
+        
+    // Draws tiles
+    fill(212,212,212);
     for(y = 0; y<6; y++){
         for(x = 0; x<6; x++){
-            rect(
-                grassPadding + lotPadding + (x * squareSize) ,
-                grassPadding + lotPadding + (y * squareSize) ,
-                // squareSize - (2* squarePadding),
-                // squareSize - (2* squarePadding),
-                squareSize ,
-                squareSize ,
-                // 15,15,15,15
-                );
+            rect(grassPadding + lotPadding + (x * squareSize), grassPadding + lotPadding + (y * squareSize),squareSize,squareSize);
         }
     }
-
-    fill(255, 255, 255);
-    rect(parkingLotDimensions + grassPadding ,
-        grassPadding + 2*squareSize + lotPadding,
-        squareSize/6,
-        squareSize);
 }
 
+function draw(){
+    drawBackground();
+    if (snapPiecesToGrid){
+        updateCars()
+    }
+
+    else{
+        updateTimer = 0;
+    }
+    drawCars();
+
+    if (levelComplete && levelCompleteTimer >= 0){
+        endingAnimation();
+    }
+    if (displayCompletionLabel){
+        document.getElementById('completion-label').style.opacity = '1';
+    }
+}
 
 function drawCars(){
     for (index = 0; index < cars.length; index++) {
@@ -115,39 +96,20 @@ function drawCars(){
     }
 }
 
-function draw(){
-    drawBackground();
-    if (snapPiecesToGrid){
-        updateCars()
-    }
-    else{
-        updateTimer = 0;
-    }
-    drawCars();
-
-    if (levelComplete){
-        endingAnimation();
-    }
-}
 
 function updateCars(){
     updatesDone = true;
     for (index = 0; index  < cars.length ; index++) {
         piece = pieces[cars[index]]
-        piece.intXpos = round((piece.pLotX - grassPadding - lotPadding) / squareSize);
-        piece.intYpos = round((piece.pLotY - grassPadding - lotPadding) / squareSize);
-        // updateTimer += 1;
-        // console.log(updateTimer)
-        // console.log("Calling updateCars")
-        if(piece.needsUpdating){
-            // console.log("Need to update: " + piece.name + " Pos: " + piece.pLotX + ", " + piece.pLotY)
-        }
+
         if (piece.needsUpdating){
-            // console.log("One pixel update")
+
             updatesDone = false;
             if(piece.isVertical){
-                moveUp = grassPadding + lotPadding + squarePadding + piece.intYpos*squareSize < piece.pLotY
+                // Determine whether it needs to Move up
+                moveUp = grassPadding + lotPadding + squarePadding + piece.cachedY*squareSize < piece.pLotY
                 piece.pLotY = moveUp ? piece.pLotY - rate : piece.pLotY + rate
+
                 if(moveUp && (abs(piece.pLotY - (grassPadding + lotPadding + squarePadding +  piece.intYpos*squareSize)) <= 1.5*rate)){
                     piece.pLotY = grassPadding + lotPadding + squarePadding+ piece.intYpos*squareSize
                     piece.needsUpdating = false
@@ -181,23 +143,34 @@ function updateCars(){
     }
 }
 
-
 function mousePressed() {
     // loop();
-    hoveredCar = carAtCursor()
     // console.log("Clicked at: " + mouseX + ", " + mouseY + " on: " + ((hoveredCar != null)? hoveredCar.name : "null"))
-    carBeingMoved = hoveredCar;
-    buttonDownXinitial = mouseX;
-    buttonDownYinitial = mouseY;
-    if (hoveredCar != null){
-        carXinitial = hoveredCar.pLotX;
-        carYinitial = hoveredCar.pLotY;
+    if (levelCompleteTimer == -1){
+        hoveredCar = null;
     }
+    
+    if (!levelComplete && (levelCompleteTimer != -1)){
+        hoveredCar = carAtCursor()
+        carBeingMoved = hoveredCar;
+        buttonDownXinitial = mouseX;
+        buttonDownYinitial = mouseY;
+        if (hoveredCar != null){
+            carXinitial = hoveredCar.pLotX;
+            carYinitial = hoveredCar.pLotY;
+            carintXinitial = hoveredCar.intXpos;
+            carintYinitial = hoveredCar.intYpos;
+        }
+    } 
+    
 }
-
 
 function mouseDragged() {
     if(carBeingMoved != null){
+
+        
+
+
         xChange = mouseX - buttonDownXinitial;
         yChange = mouseY - buttonDownYinitial;
 
@@ -286,22 +259,33 @@ function mouseDragged() {
 }
 
 function mouseReleased() {
+
+
     if (carBeingMoved != null){
         carBeingMoved.needsUpdating = true;
-        // console.table([carBeingMoved])
     }
+
     snapPiecesToGrid = true;
-    // carBeingMoved = null;
     buttonDownXinitial = null;
     buttonDownYinitial = null;
     carXinitial = null;
     carYinitial = null;
+    carintXinitial = null;
+    carintYinitial = null;
     mouseDragLimitReached = false;
+
   }
 
 function endingAnimation(){
+    levelCompleteTimer += 1
+    carBeingMoved = null;
+    console.log("Completion Timer: " + levelCompleteTimer);
     if (pieces["redCar"].pLotX < grassPadding + lotPadding + 7 * squareSize){
         pieces["redCar"].pLotX += 5;
+    }
+    else if (levelCompleteTimer > 55 ){
+        displayCompletionLabel = true;
+        levelCompleteTimer = -1;
     }
 }
 
