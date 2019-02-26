@@ -21,7 +21,8 @@ html{
     font-weight: bold;
     text-align: center;
     padding: .5em 0 .5em 0;
-    background-color: bisque
+    background-color: bisque;
+    user-select: none;
 }
 
 .parking-lot{
@@ -72,7 +73,7 @@ html{
     align-content: center;
     text-align: center;
     /* margin: 0 2em 0 0 ; */
-
+    user-select: none;
 }
 
 #game-info hr{

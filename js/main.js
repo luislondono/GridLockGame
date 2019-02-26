@@ -3,7 +3,15 @@ var gameSeconds;
 var timer;
 var moves = 0;
 var movesLabel;
+var currentLevel = 1;
 setInterval(updateTimer,1000);
+// setInterval(checkLevelComplete,100);
+
+levelComplete = false;
+displayCompletionLabel = false;
+levelCompleteTimer = 0;
+
+document.onkeydown = checkLevelComplete
 
 allCars = {
     "redCar"        : {"color" : [255,59,59]    , "length" : 2, isVertical : false } ,
@@ -39,10 +47,19 @@ function boardPiece(name, length, isVertical, intXpos, intYpos,[r,g,b]){
     this.width = isVertical? 1 * squareSize - 2 * squarePadding: length * squareSize - 2 * squarePadding;
     this.needsUpdating = false;
     this.cachedX = intXpos;
-    this.cashedY = intYpos;
+    this.cachedY = intYpos;
+    this.adjustNorthWest = null;
 }
 
-
+function checkLevelComplete(){
+    console.log("Key was pressed, checking if level is complete")
+    if(levelComplete){
+        console.log("Level Done, waiting to load next map")
+        currentLevel += 1;
+        setupBoard(currentLevel,false);
+        updateLevelLabel();
+    }
+}
 
 function updateTimer(){
     // console.log("updateTimer being called")
@@ -71,14 +88,18 @@ function formatTime(seconds){
 function setupWindow(){
     setupBoard()
 
+
     gameSeconds = 0;
     timer = document.getElementById('game-timer');
     movesLabel = document.getElementById('moves-count');
     console.log("Setup the Window")
+
+    
 }
 
-function setupBoard(level = 1){
-    console.log("Setting up the Board")
+function setupBoard(level = 1, initial = true){
+    clearBoard(initial)
+    console.log("Setting up the Board for level: " + level)
     for (var piece in maps[level]) {
         // console.log(piece)
         cars.push(piece)
@@ -90,11 +111,29 @@ function setupBoard(level = 1){
             maps[level][piece][0][1],
             allCars[piece]["color"]);
     }
+    loop()
     // console.log(cars)
 }
 
 function updateMoves(){
     movesLabel.innerText = String(moves)
+}
+
+function updateLevelLabel(){
+    document.getElementById('level-label').innerText = "Level " + currentLevel;
+}
+
+function clearBoard(initial = false){
+    cars= []
+    pieces = {}
+    moves = 0;
+    gameSeconds = 0;
+    levelComplete = false;
+    displayCompletionLabel = false;
+    levelCompleteTimer = 0;
+    if (!initial){
+        updateMoves();
+    }
 }
 
 
@@ -108,6 +147,19 @@ maps = {
         "yellowTruck"   :[[5,0],true],
         "lightBlueCar"  :[[4,4],false],
         "greenTruck"    :[[2,5],false]
+    },
+    2:{
+        "redCar"        :[[0,2],false],
+        "lightGreenCar" :[[0,0],true],
+        "purpleTruck"   :[[5,1],true],
+        "orangeCar"     :[[3,1],true],
+        "blueTruck"     :[[0,3],false],
+        "yellowTruck"   :[[3,0],false],
+        "lightBlueCar"  :[[4,2],true],
+        "greenCar"      :[[0,5],false],
+        "pinkCar"       :[[2,4],true],
+        "purpleCar"     :[[4,4],false],
+        "grayCar"       :[[3,5],false],
     }
 }
 
